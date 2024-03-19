@@ -2,6 +2,7 @@ import h5py
 import numpy as np
 from typing import Tuple, Dict
 
+
 def sigmoid(Z):
     """
     Implements the sigmoid activation in numpy
@@ -79,7 +80,7 @@ def sigmoid_backward(dA, cache):
 
     s = 1 / (1 + np.exp(Z))
     # dz = da * g'(z), where g'(z) = g(z) * (1 - g(z)) ===> for sigmoid
-    dZ = dA * s * (1 - s + 10** -8)
+    dZ = dA * s * (1 - s + 10 ** -8)
 
     assert (dZ.shape == Z.shape)
 
@@ -112,6 +113,8 @@ def initialize_parameters(self, layer_dims: Tuple[int, ...]) -> Dict:
     return parameters
 
 # Layer XYZ to Layer XYZ + 1
+
+
 def linear_forward(A_prev, W, b):
     """
     Implement the linear part of a layer's forward propagation.
@@ -132,6 +135,8 @@ def linear_forward(A_prev, W, b):
     return Z, cache
 
 # Layer XYZ to Layer XYZ + 1
+
+
 def linear_activation_forward(A_prev, W, b, activation):
     """
     Implement the forward propagation for the LINEAR->ACTIVATION layer
@@ -160,6 +165,7 @@ def linear_activation_forward(A_prev, W, b, activation):
     cache = (linear_cache, activation_cache)
     return A, cache
 
+
 def compute_cost(AL, Y):
     """
     Implement the cross-entropy cost function
@@ -172,14 +178,69 @@ def compute_cost(AL, Y):
     cost -- cross-entropy cost
     """
     m = Y.shape[1]
-    
-    cost = -1 / m * (np.dot(Y, np.log(AL).T) + np.dot((1 -Y), np.log(1-AL).T))
-    
+
+    cost = -1 / m * (np.dot(Y, np.log(AL).T) + np.dot((1 - Y), np.log(1-AL).T))
+
     cost = np.squeeze(cost)
-    assert(cost.shape == ())
-    
+    assert (cost.shape == ())
+
     return cost
 
+
+# linear portion of backward propagation for a single layer
+def linear_backward(dZ, cache):
+    """
+    Implement the linear portion of backward propagation for a single layer (layer l)
+
+    Arguments:
+    dZ -- Gradient of the cost with respect to the linear output (of current layer l)
+    cache -- tuple of values (A_prev, W, b) coming from the forward propagation in the current layer
+
+    Returns:
+    dA_prev -- Gradient of the cost with respect to the activation (of the previous layer l-1), same shape as A_prev
+    dW -- Gradient of the cost with respect to W (current layer l), same shape as W
+    db -- Gradient of the cost with respect to b (current layer l), same shape as b
+    """
+    A_prev, W, b = cache
+    m = A_prev.shape[1]
+
+    dW = 1 / m * (np.dot(dZ, A_prev.T))
+    db = 1 / m * (np.sum(dZ, axis=1, keepdims=True))
+    dA_prev = np.dot(W.T, dZ)
+
+    assert (dA_prev.shape == A_prev.shape)
+    assert (dW.shape == W.shape)
+    assert (db.shape == b.shape)
+
+    return dA_prev, dW, db
+
+# Compute dZ
+
+
+def linear_activation_backward(dA, cache, activation):
+    """
+    Implement the backward propagation for the LINEAR->ACTIVATION layer.
+
+    Arguments:
+    dA -- post-activation gradient for current layer l 
+    cache -- tuple of values (linear_cache, activation_cache) we store for computing backward propagation efficiently
+    activation -- the activation to be used in this layer, stored as a text string: "sigmoid" or "relu"
+
+    Returns:
+    dA_prev -- Gradient of the cost with respect to the activation (of the previous layer l-1), same shape as A_prev
+    dW -- Gradient of the cost with respect to W (current layer l), same shape as W
+    db -- Gradient of the cost with respect to b (current layer l), same shape as b
+    """
+    linear_cache, activation_cache = cache
+
+    if activation == "relu":
+        dZ = relu_backward(dA, activation_cache)
+    elif activation == "sigmoid":
+        dZ = sigmoid_backward(dA, activation_cache)
+
+    dA_prev, dW, db = linear_backward(dZ, linear_cache)
+
+    return dA_prev, dW, db
 
 
 def load_dataset(train_dataset_path: str, test_dataset_path: str):
