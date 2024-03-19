@@ -165,6 +165,45 @@ def linear_activation_forward(A_prev, W, b, activation):
     cache = (linear_cache, activation_cache)
     return A, cache
 
+# Traverse the whole DNN (Deep Neural Network)
+
+
+def L_model_forward(X, parameters):
+    """
+    Implement forward propagation for the [LINEAR->RELU]*(L-1)->LINEAR->SIGMOID computation
+
+    Arguments:
+    X -- data, numpy array of shape (input size, number of examples)
+    parameters -- output of initialize_parameters_deep()
+
+    Returns:
+    AL -- last post-activation value
+    caches -- list of caches containing:
+                every cache of linear_relu_forward() (there are L-1 of them, indexed from 0 to L-2)
+                the cache of linear_sigmoid_forward() (there is one, indexed L-1)
+    """
+    L = len(parameters) // 2    # /2 since w1 & b1 (for example) belong to the same layer
+    A_prev = X
+
+    caches = []
+
+    for l in range(1, L):
+        W = parameters["W" + str(l)]
+        b = parameters["b" + str(l)]
+
+        A, cache = linear_activation_forward(A_prev, W, b, "relu")
+
+        caches.append(cache)
+        A_prev = A
+
+    AL, cache = linear_activation_forward(
+        A_prev, parameters["W" + str(L)], parameters["b" + str(L)], "sigmoid")
+    caches.append(cache)
+
+    assert (AL.shape == (1, X.shape[1]))     # 1 * m
+
+    return AL, caches
+
 
 def compute_cost(AL, Y):
     """
@@ -241,6 +280,68 @@ def linear_activation_backward(dA, cache, activation):
     dA_prev, dW, db = linear_backward(dZ, linear_cache)
 
     return dA_prev, dW, db
+
+
+def L_model_backward(AL, Y, caches):
+    """
+    Implement the backward propagation for the [LINEAR->RELU] * (L-1) -> LINEAR -> SIGMOID group
+
+    Arguments:
+    AL -- probability vector, output of the forward propagation (L_model_forward())
+    Y -- true "label" vector (containing 0 if non-cat, 1 if cat)
+    caches -- list of caches containing:
+                every cache of linear_activation_forward() with "relu" (there are (L-1) or them, indexes from 0 to L-2)
+                the cache of linear_activation_forward() with "sigmoid" (there is one, index L-1)
+
+    Returns:
+    grads -- A dictionary with the gradients
+             grads["dA" + str(l)] = ... 
+             grads["dW" + str(l)] = ...
+             grads["db" + str(l)] = ... 
+    """
+    grads = {}
+    L = len(caches)
+    dAL = -1 * (Y / AL) + (1 - Y) / (1 - AL)
+
+    dA_prev, dW, db = linear_activation_backward(
+        dA=dAL, cache=caches[L-1], activation="sigmoid")
+    grads["dA" + str(L)], grads["dW" + str(L)], grads["db" +
+                                                      str(L)] = (dA_prev, dW, db)
+
+    for l in reversed(range(1, L)):
+        dA = dA_prev
+        dA_prev, dW, db = linear_activation_backward(
+            dA=dA, cache=caches[l-1], activation="relu")
+        grads["dA" + str(l)], grads["dW" + str(l)
+                                    ], grads["db" + str(l)] = (dA_prev, dW, db)
+
+    return grads
+
+# Learn and update parameters
+
+
+def update_parameters(parameters, grads, learning_rate):
+    """
+    Update parameters using gradient descent
+
+    Arguments:
+    parameters -- python dictionary containing your parameters 
+    grads -- python dictionary containing your gradients, output of L_model_backward
+
+    Returns:
+    parameters -- python dictionary containing your updated parameters 
+                  parameters["W" + str(l)] = ... 
+                  parameters["b" + str(l)] = ...
+    """
+    L = len(parameters) // 2  # /2 since there is W & b for each layer
+
+    for l in range(L):
+        parameters["W" + str(l+1)] = parameters["W" + str(l+1)] - \
+            grads["dW" + str(l+1)] * learning_rate
+        parameters["b" + str(l+1)] = parameters["b" + str(l+1)] - \
+            grads["db" + str(l+1)] * learning_rate
+
+    return parameters
 
 
 def load_dataset(train_dataset_path: str, test_dataset_path: str):

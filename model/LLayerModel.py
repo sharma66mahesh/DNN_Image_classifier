@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 from utils.dnn_utils import *
 
 
@@ -27,7 +27,7 @@ class LLayerModel:
         self.parameters = {}
 
     def fit(self, layer_dims: Tuple[int, ...], train_set_x: np.ndarray, train_set_y: np.ndarray,
-            test_set_x: np.ndarray, test_set_y: np.ndarray):
+            test_set_x: np.ndarray, test_set_y: np.ndarray) -> Dict:
         """Train the model params according to provided dataset and hyper-parameters(layer count & units in each layer)
 
         Args:
@@ -52,17 +52,29 @@ class LLayerModel:
                 "Model might be missing train/test datasets or layer_dims")
 
         # initialize params
-        self.parameters = self.initialize_parameters(layer_dims)
+        parameters = self.initialize_parameters(layer_dims)
 
         for i in range(self.num_iterations):
             # forward propagation
-            pass
+            AL, caches = L_model_forward(train_set_x, self.parameters)
+
             # cost calculation
-            pass
+            cost = compute_cost(AL, train_set_y)
+
+            if i % 100 == 0:
+                self.costs.append(cost)
+                if self.print_cost:
+                    print(f"Cost after iteration {i} = ", str(cost))
+
             # backward propagation
-            pass
+            grads = L_model_backward(AL, train_set_y, caches=caches)
+
             # update model parameters
-            pass
+            parameters = update_parameters(
+                parameters, grads, self.learning_rate)
+        
+        self.parameters = parameters
+        return parameters
 
     def is_initialized(self) -> bool:
         """Check if the model is initialized with all the necessary hyperparameters and datasets
