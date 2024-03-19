@@ -16,9 +16,11 @@ test_set_x_flatten = test_set_x_orig.reshape(test_set_x_orig.shape[0], -1).T
 train_set_x = train_set_x_flatten / 255
 test_set_x = test_set_x_flatten / 255
 
-four_layer_dnn = LLayerModel(classes, num_iterations=2000, learning_rate=0.005, print_cost=True)
+dnn_model = LLayerModel(classes, num_iterations=2000, learning_rate=0.005, print_cost=True)
 
 # Train model
+four_layer_dims = (train_set_x.shape[0], 20, 7, 5, 1) # 4-LAYER
+dnn_model.fit(four_layer_dims, train_set_x, train_set_y, test_set_x, test_set_y)
 
 # Make predictions on the test set
 
