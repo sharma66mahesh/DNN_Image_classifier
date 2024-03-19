@@ -47,22 +47,23 @@ class LLayerModel:
         self.m = train_set_x.shape[1]  # no. of training data
 
         # ensure that the model has all the data required
-        if not self.is_initialized():
+        if not self.is_pre_initialized():
             raise Exception(
                 "Model might be missing train/test datasets or layer_dims")
 
         # initialize params
-        parameters = self.initialize_parameters(layer_dims)
+        parameters = initialize_parameters(layer_dims)
+        costs = []
 
         for i in range(self.num_iterations):
             # forward propagation
-            AL, caches = L_model_forward(train_set_x, self.parameters)
+            AL, caches = L_model_forward(train_set_x, parameters)
 
             # cost calculation
             cost = compute_cost(AL, train_set_y)
 
             if i % 100 == 0:
-                self.costs.append(cost)
+                costs.append(cost)
                 if self.print_cost:
                     print(f"Cost after iteration {i} = ", str(cost))
 
@@ -74,9 +75,11 @@ class LLayerModel:
                 parameters, grads, self.learning_rate)
         
         self.parameters = parameters
-        return parameters
+        self.costs = costs
+        
+        return parameters, costs
 
-    def is_initialized(self) -> bool:
+    def is_pre_initialized(self) -> bool:
         """Check if the model is initialized with all the necessary hyperparameters and datasets
 
         Returns:
@@ -86,3 +89,34 @@ class LLayerModel:
                 and len(self.test_set_y) > 0 and len(self.layer_dims) > 0):
             return False
         return True
+
+    def predict(self, test_data_x: np.ndarray, test_data_y: np.ndarray) -> Tuple:
+        """
+        This function is used to predict the results of a  L-layer neural network.
+        
+        Arguments:
+        X -- data set of examples you would like to label
+        
+        Returns:
+        Tuple -- predictions for the given dataset X, accuracy of the predictions
+        """
+        if len(self.parameters) == 0:
+            raise Exception('Model is not trained yet. Run fit() method first.')
+        
+        m = test_data_y.shape[1]
+        
+        predictions = np.zeros((1, m))
+        
+        # forward propagation
+        AL, _ = L_model_forward(test_data_x, self.parameters)
+        
+        # AL is a proability number 0 <= AL <= 1. Need to convert this to yes or no
+        for i in range(0, AL.shape[1]):
+            if(AL[0,i] > 0.5):
+                predictions[0, i] = 1
+            else:
+                predictions[0, i] = 0
+
+        accuracy = np.sum(predictions == test_data_y) / m
+        
+        return predictions, accuracy

@@ -87,7 +87,7 @@ def sigmoid_backward(dA, cache):
     return dZ
 
 
-def initialize_parameters(self, layer_dims: Tuple[int, ...]) -> Dict:
+def initialize_parameters(layer_dims: Tuple[int, ...]) -> Dict:
     """
     Arguments:
     layer_dims -- python array (list) containing the dimensions of each layer in our network. Eg: [n_x, 4,3,2,1], where 1st layer has 4 neurons, 2nd layer has 3 neurons, and so on...
